@@ -164,7 +164,7 @@ type Network struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
-	CreatedAt   int64  `json:"createdAt"`
+	CreatedAt   string  `json:"createdAt"`
 	OrgID       string `json:"orgId,omitempty"`
 	CreatorID   string `json:"creatorId,omitempty"`
 	Creator     string `json:"creator,omitempty"`
@@ -410,7 +410,7 @@ type SnapshotsResponse struct {
 	ID        string     `json:"id"`
 	Name      string     `json:"name"`
 	Creator   string     `json:"creator"`
-	CreatedAt int64      `json:"createdAt"`
+	CreatedAt string      `json:"createdAt"`
 	OrgID     string     `json:"orgId"`
 	CreatorID string     `json:"creatorId"`
 	Snapshots []Snapshot `json:"snapshots"`
