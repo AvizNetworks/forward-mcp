@@ -1,9 +1,9 @@
 # Build stage
-FROM golang:1.24-alpine3.21 AS builder
-
-RUN apk add --no-cache gcc musl-dev
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
+
+RUN apk add --no-cache gcc musl-dev
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -14,7 +14,7 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (CGO required for go-sqlite3)
 RUN CGO_ENABLED=1 GOOS=linux go build -o /app/forward-mcp cmd/server/main.go
 
 # Final stage - pinned to Alpine 3.21 for zlib security fixes
