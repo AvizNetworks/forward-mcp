@@ -58,7 +58,10 @@ func TestSSETransport_Start(t *testing.T) {
 	assert.Equal(t, "text/event-stream", w.Header().Get("Content-Type"))
 	assert.Equal(t, "no-cache", w.Header().Get("Cache-Control"))
 	assert.Equal(t, "keep-alive", w.Header().Get("Connection"))
-	assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
+	// NCP-3182: no CORS header — this transport is server-to-server only, never
+	// called from a browser, so a wildcard Access-Control-Allow-Origin was pure
+	// attack surface with no functional benefit.
+	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"))
 
 	// Check endpoint event was sent
 	body := w.Body.String()
@@ -312,7 +315,11 @@ func TestSSEServer_HandleSSE_WrongMethod(t *testing.T) {
 	assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
 }
 
-func TestSSEServer_HandleMessage_CORS(t *testing.T) {
+func TestSSEServer_HandleMessage_NoCORSPreflight(t *testing.T) {
+	// NCP-3182: the OPTIONS/CORS preflight branch was removed — this server is
+	// only ever called server-to-server, never from a browser, so there's no
+	// preflight to answer. An OPTIONS request now just falls through to the
+	// method-not-allowed response like any other non-POST method.
 	factory := func(tr transport.Transport) error {
 		return tr.Start(context.Background())
 	}
@@ -323,9 +330,8 @@ func TestSSEServer_HandleMessage_CORS(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	sseServer.handleMessage(w, req)
-	assert.Equal(t, http.StatusNoContent, w.Code)
-	assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
-	assert.Contains(t, w.Header().Get("Access-Control-Allow-Methods"), "POST")
+	assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"))
 }
 
 func TestSSEServer_ConcurrentSessions(t *testing.T) {

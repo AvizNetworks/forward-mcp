@@ -62,7 +62,6 @@ func (t *SSETransport) Start(ctx context.Context) error {
 	t.writer.Header().Set("Content-Type", "text/event-stream")
 	t.writer.Header().Set("Cache-Control", "no-cache")
 	t.writer.Header().Set("Connection", "keep-alive")
-	t.writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Send the endpoint event telling the client where to POST messages
 	if err := t.writeSSEEvent("endpoint", t.messageEndpoint); err != nil {
@@ -365,14 +364,6 @@ func (s *SSEServer) handleSSE(w http.ResponseWriter, r *http.Request) {
 
 // handleMessage handles POST /message?sessionId=xxx requests.
 func (s *SSEServer) handleMessage(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -426,7 +417,6 @@ func (s *SSEServer) handleMessage(w http.ResponseWriter, r *http.Request) {
 
 	// Return the response in the POST reply as well
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	jsonData, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "failed to marshal response", http.StatusInternalServerError)
