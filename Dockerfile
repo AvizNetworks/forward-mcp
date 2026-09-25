@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26-alpine3.24 AS builder
 
 WORKDIR /app
 
@@ -17,11 +17,16 @@ COPY . .
 # Build the application (CGO required for go-sqlite3)
 RUN CGO_ENABLED=1 GOOS=linux go build -o /app/forward-mcp cmd/server/main.go
 
-# Final stage - pinned to Alpine 3.21 for zlib security fixes
-FROM alpine:3.21
+# Final stage - latest Alpine 3.x
+FROM alpine:3.24
 
-# Upgrade all packages to pick up security patches (zlib >= 1.3.1-r4)
-RUN apk upgrade --no-cache
+# Upgrade all packages to pick up security patches, keep CA certs (HTTPS to
+# Forward Networks), then drop the package manager: apk-tools is what pulls in
+# zlib (CVE-2026-85091, no fixed Alpine package yet) and libcrypto3/libssl3,
+# none of which the binary (musl-only, Go TLS) uses.
+RUN apk upgrade --no-cache && \
+    apk add --no-cache ca-certificates-bundle && \
+    apk del --no-cache apk-tools
 
 WORKDIR /app
 
